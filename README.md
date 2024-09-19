@@ -1,7 +1,3 @@
-Here’s an updated `README.md` to include an explanation that this script handles audio files that you have to click to play on the slide, making it clearer for users who might encounter this kind of embedded media.
-
-### Updated `README.md`
-
 # SlideAudioExtractor
 
 SlideAudioExtractor is a Python script designed to extract and combine embedded audio from PowerPoint presentations (`.pptx`) into a single `.wav` file. This tool is especially useful for students and professionals who need to review or organize audio from lecture slides or presentations where the audio is embedded as clickable elements on each slide.
@@ -73,4 +69,4 @@ The default save filename will be pre-filled as `AUDIO_<original_pptx_filename>.
 ## License
 
 This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for more information.
-```
+
