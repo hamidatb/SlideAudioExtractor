@@ -1,3 +1,5 @@
 python-pptx
 pydub
 tkfilebrowser
+pydub
+gtts

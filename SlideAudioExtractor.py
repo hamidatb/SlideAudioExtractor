@@ -3,7 +3,26 @@ from pptx import Presentation
 from pydub import AudioSegment
 from tkinter import Tk
 from tkinter.filedialog import askopenfilename, asksaveasfilename
+from gtts import gTTS
 import tempfile
+
+def generate_slide_number_audio(slide_number):
+    """Generate 'Slide X' audio using gTTS"""
+    text = f"Slide {slide_number}"
+    tts = gTTS(text)
+    
+    # Create a temporary audio file for the slide number
+    with tempfile.NamedTemporaryFile(delete=False, suffix='.mp3') as temp_audio:
+        temp_audio_path = temp_audio.name
+        tts.save(temp_audio_path)
+    
+    # Load the generated audio file as an AudioSegment
+    slide_audio = AudioSegment.from_file(temp_audio_path)
+    
+    # Remove the temporary file
+    os.remove(temp_audio_path)
+    
+    return slide_audio
 
 def extract_audio_from_pptx(pptx_path):
     # Load the presentation
@@ -12,7 +31,11 @@ def extract_audio_from_pptx(pptx_path):
     # A list to store the audio segments
     audio_segments = []
 
-    for slide in prs.slides:
+    for i, slide in enumerate(prs.slides, start=1):
+        # Add the 'Slide X' audio before each slide
+        slide_number_audio = generate_slide_number_audio(i)
+        audio_segments.append(slide_number_audio)
+        
         for shape in slide.shapes:
             if shape.has_media and shape.media:
                 # Save the embedded media to a temp file
