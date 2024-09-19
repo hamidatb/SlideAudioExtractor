@@ -3,3 +3,4 @@ __pycache__/
 *.pyo
 *.tmp
 *.log
+/test_files

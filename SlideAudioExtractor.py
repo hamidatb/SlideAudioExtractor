@@ -1,10 +1,40 @@
 import os
-from pptx import Presentation
+import tempfile
+import zipfile
 from pydub import AudioSegment
 from tkinter import Tk
 from tkinter.filedialog import askopenfilename, asksaveasfilename
 from gtts import gTTS
-import tempfile
+
+def extract_audio_from_pptx_as_zip(pptx_path):
+    # A list to store the audio segments
+    audio_segments = []
+
+    # Unzip the .pptx file and extract media files
+    with zipfile.ZipFile(pptx_path, 'r') as pptx_zip:
+        # Extract media files that end with .m4a and sort by the numerical part of their name
+        media_files = sorted(
+            [f for f in pptx_zip.namelist() if f.startswith('ppt/media/') and f.endswith('.m4a')],
+            key=lambda x: int(''.join(filter(str.isdigit, x)))
+        )
+
+        for i, media_file in enumerate(media_files, start=1):
+            # Add 'Slide X' audio between each slide
+            slide_number_audio = generate_slide_number_audio(i)
+            audio_segments.append(slide_number_audio)
+
+            # Extract the audio file from the zip
+            with pptx_zip.open(media_file) as media:
+                # Convert the file to an AudioSegment using pydub (with ffmpeg support)
+                audio_segment = AudioSegment.from_file(media, format="m4a")
+                audio_segments.append(audio_segment)
+
+    # Concatenate all audio segments into one long segment
+    if audio_segments:
+        final_audio = sum(audio_segments)
+        return final_audio
+    else:
+        return None
 
 def generate_slide_number_audio(slide_number):
     """Generate 'Slide X' audio using gTTS"""
@@ -24,39 +54,6 @@ def generate_slide_number_audio(slide_number):
     
     return slide_audio
 
-def extract_audio_from_pptx(pptx_path):
-    # Load the presentation
-    prs = Presentation(pptx_path)
-    
-    # A list to store the audio segments
-    audio_segments = []
-
-    for i, slide in enumerate(prs.slides, start=1):
-        # Add the 'Slide X' audio before each slide
-        slide_number_audio = generate_slide_number_audio(i)
-        audio_segments.append(slide_number_audio)
-        
-        for shape in slide.shapes:
-            if shape.has_media and shape.media:
-                # Save the embedded media to a temp file
-                with tempfile.NamedTemporaryFile(delete=False, suffix='.wav') as temp_audio:
-                    temp_audio.write(shape.media.blob)
-                    temp_audio_path = temp_audio.name
-                    
-                # Load the audio segment
-                audio = AudioSegment.from_file(temp_audio_path)
-                audio_segments.append(audio)
-                
-                # Remove the temporary file after loading the audio
-                os.remove(temp_audio_path)
-    
-    # Concatenate all audio segments into one long segment
-    if audio_segments:
-        final_audio = sum(audio_segments)
-        return final_audio
-    else:
-        return None
-
 def main():
     # Tkinter setup
     root = Tk()
@@ -73,13 +70,18 @@ def main():
         return
 
     # Extract the audio from the selected PPTX file
-    final_audio = extract_audio_from_pptx(pptx_path)
+    final_audio = extract_audio_from_pptx_as_zip(pptx_path)
 
     if final_audio:
+        # Pre-fill the filename with 'AUDIO_<original_filename>.wav'
+        original_filename = os.path.splitext(os.path.basename(pptx_path))[0]
+        default_filename = f"AUDIO_{original_filename}.wav"
+
         # Ask where to save the resulting audio
         save_path = asksaveasfilename(
             title="Save the combined audio",
             defaultextension=".wav",
+            initialfile=default_filename,
             filetypes=[("WAV files", "*.wav")]
         )
 
